@@ -1,7 +1,14 @@
 const widget = document.getElementById("horoscopeWidget");
+const previewWidget = document.getElementById("previewWidget");
+
 const signDisplay = document.getElementById("signDisplay");
+const previewSignDisplay = document.getElementById("previewSignDisplay");
+
 const text = document.getElementById("text");
+const previewText = document.getElementById("previewText");
+
 const date = document.getElementById("date");
+const previewDate = document.getElementById("previewDate");
 
 const signBtn = document.getElementById("signBtn");
 const signPopup = document.getElementById("signPopup");
@@ -9,41 +16,108 @@ const signPopup = document.getElementById("signPopup");
 const themeBtn = document.getElementById("themeBtn");
 const themeOptions = document.getElementById("themeOptions");
 
+const appearanceToggle = document.getElementById("appearanceToggle");
+const appearanceOptions = document.getElementById("appearanceOptions");
+const appearanceChoices = document.querySelectorAll(".appearance-option");
+
 const fontBtn = document.getElementById("fontToggle");
-const fontPanel = document.getElementById("fontOptions");
+const fontOptions = document.getElementById("fontOptions");
 
 const copyBtn = document.getElementById("copyLinkBtn");
+const copyMessage = document.getElementById("copyMessage");
 
 const params = new URLSearchParams(window.location.search);
 const isEmbed = params.get("embed") === "true";
 
-/* ---------------- EMBED MODE ---------------- */
 if (isEmbed) {
-  const builder = document.querySelector(".builder-ui");
-  const footer = document.querySelector(".footer-links");
-
-  if (builder) builder.style.display = "none";
-  if (footer) footer.style.display = "none";
+  document.documentElement.classList.add("embed-mode");
 }
 
-/* ---------------- STATE ---------------- */
 let state = {
-  sign: params.get("sign") || localStorage.getItem("sign") || "aries",
-  theme: params.get("theme") || localStorage.getItem("theme") || "pink",
-  font: params.get("font") || localStorage.getItem("font") || "default"
+  sign: params.get("sign") || localStorage.getItem("horoscopeSign") || "aries",
+  theme: params.get("theme") || localStorage.getItem("horoscopeTheme") || "pink",
+  font: params.get("font") || localStorage.getItem("horoscopeFont") || "default",
+  appearance:
+    params.get("appearance") ||
+    localStorage.getItem("horoscopeAppearance") ||
+    "system"
 };
 
-/* ---------------- APPLY STATE ---------------- */
-function applyState() {
-  widget.className = `widget ${state.theme}`;
-  widget.classList.add(`font-${state.font}`);
+const themeColors = {
+  pink: "#f4dfeb",
+  beige: "#faebdd",
+  blue: "#ddebf1",
+  green: "#ddedea",
+  black: "#17171a",
+  white: "#f8f6f3"
+};
 
-  signDisplay.textContent = state.sign;
+function saveState() {
+  localStorage.setItem("horoscopeSign", state.sign);
+  localStorage.setItem("horoscopeTheme", state.theme);
+  localStorage.setItem("horoscopeFont", state.font);
+  localStorage.setItem("horoscopeAppearance", state.appearance);
 }
 
-/* ---------------- HOROSCOPE ---------------- */
+function updateBothWidgets(callback) {
+  [widget, previewWidget].forEach((item) => {
+    if (item) callback(item);
+  });
+}
+
+function setTheme(theme) {
+  state.theme = theme || "pink";
+
+  updateBothWidgets((item) => {
+    item.classList.remove("pink", "beige", "blue", "green", "black", "white");
+    item.classList.add(state.theme);
+  });
+
+  if (themeBtn) {
+    themeBtn.style.setProperty("--theme-color", themeColors[state.theme]);
+    themeBtn.style.backgroundColor = themeColors[state.theme];
+  }
+
+  saveState();
+}
+
+function setFont(font) {
+  state.font = font || "default";
+
+  updateBothWidgets((item) => {
+    item.classList.remove("font-default", "font-serif", "font-mono");
+    item.classList.add(`font-${state.font}`);
+  });
+
+  saveState();
+}
+
+function setAppearance(appearance) {
+  state.appearance = appearance || "system";
+
+  document.body.classList.remove(
+    "appearance-light",
+    "appearance-dark",
+    "appearance-system"
+  );
+
+  document.body.classList.add(`appearance-${state.appearance}`);
+
+  saveState();
+}
+
+function updateSignText() {
+  if (signDisplay) signDisplay.textContent = state.sign;
+  if (previewSignDisplay) previewSignDisplay.textContent = state.sign;
+
+  signPopup?.querySelectorAll("button").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.sign === state.sign);
+  });
+}
+
 async function loadHoroscope(sign) {
-  text.textContent = "checking stars…";
+  if (text) text.textContent = "checking stars…";
+  if (previewText) previewText.textContent = "checking stars…";
 
   try {
     const res = await fetch(
@@ -57,120 +131,159 @@ async function loadHoroscope(sign) {
 
     const data = await res.json();
 
-    text.textContent = data.horoscope;
-    date.textContent = new Date().toLocaleDateString();
+    const horoscope = data.horoscope || "stars unavailable ✨";
+    const today = new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    if (text) text.textContent = horoscope;
+    if (previewText) previewText.textContent = horoscope;
+
+    if (date) date.textContent = today.toLowerCase();
+    if (previewDate) previewDate.textContent = today.toLowerCase();
 
   } catch {
-    text.textContent = "stars unavailable ✨";
+    if (text) text.textContent = "stars unavailable ✨";
+    if (previewText) previewText.textContent = "stars unavailable ✨";
   }
 }
 
-/* ---------------- SIGN ---------------- */
-signBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-
-  const isHidden = signPopup.classList.contains("hidden");
-
-  // close others first (important for consistency)
-  themeOptions.classList.add("hidden");
-  fontPanel.classList.add("hidden");
-
-  if (isHidden) {
-    signPopup.classList.remove("hidden");
-  } else {
-    signPopup.classList.add("hidden");
-  }
-});
-
-signPopup.querySelectorAll("button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    state.sign = btn.dataset.sign;
-
-    localStorage.setItem("sign", state.sign);
-
-    applyState();
-    loadHoroscope(state.sign);
-
-    signPopup.classList.add("hidden");
-  });
-});
-
-function highlightActiveSign() {
-  signPopup.querySelectorAll("button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.sign === state.sign);
-  });
-}
-/* ---------------- THEME ---------------- */
-themeBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  themeOptions.classList.toggle("hidden");
-});
-
-themeOptions.querySelectorAll(".theme-circle").forEach(circle => {
-  circle.addEventListener("click", () => {
-    state.theme = circle.dataset.theme;
-
-    localStorage.setItem("theme", state.theme);
-
-    applyState();
-    themeOptions.classList.add("hidden");
-  });
-});
-
-/* ---------------- FONT ---------------- */
-fontBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  fontPanel.classList.toggle("hidden");
-});
-
-fontPanel.querySelectorAll(".font-option").forEach(btn => {
-  btn.addEventListener("click", () => {
-    state.font = btn.dataset.font;
-
-    localStorage.setItem("font", state.font);
-
-    applyState();
-    fontPanel.classList.add("hidden");
-  });
-});
-
-/* ---------------- OUTSIDE CLICK ---------------- */
-document.addEventListener("click", (e) => {
-  if (!signBtn.contains(e.target) && !signPopup.contains(e.target)) {
-    signPopup.classList.add("hidden");
-  }
-
-  if (!themeBtn.contains(e.target) && !themeOptions.contains(e.target)) {
-    themeOptions.classList.add("hidden");
-  }
-
-  if (!fontBtn.contains(e.target) && !fontPanel.contains(e.target)) {
-    fontPanel.classList.add("hidden");
-  }
-});
-
-/* ---------------- COPY LINK (WEATHER STYLE) ---------------- */
-function buildEmbedURL() {
-  const base = window.location.origin + window.location.pathname;
-
-  return `${base}?sign=${state.sign}&theme=${state.theme}&font=${state.font}&embed=true`;
+function closeMenus() {
+  signPopup?.classList.add("hidden");
+  themeOptions?.classList.add("hidden");
+  fontOptions?.classList.add("hidden");
+  appearanceOptions?.classList.add("hidden");
 }
 
-copyBtn.addEventListener("click", () => {
-  navigator.clipboard.writeText(buildEmbedURL());
+if (!isEmbed) {
+  signBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
 
-  const msg = document.getElementById("copyMessage");
-  if (msg) {
-    msg.classList.remove("hidden");
-    msg.classList.add("show");
+    signPopup?.classList.toggle("hidden");
+    themeOptions?.classList.add("hidden");
+    fontOptions?.classList.add("hidden");
+    appearanceOptions?.classList.add("hidden");
+  });
 
-    setTimeout(() => {
-      msg.classList.remove("show");
-      msg.classList.add("hidden");
-    }, 2000);
-  }
-});
+  signPopup?.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
 
-/* ---------------- INIT ---------------- */
-applyState();
-loadHoroscope(state.sign);
+      state.sign = btn.dataset.sign;
+
+      updateSignText();
+      loadHoroscope(state.sign);
+      saveState();
+
+      signPopup?.classList.add("hidden");
+    });
+  });
+
+  themeBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    themeOptions?.classList.toggle("hidden");
+    signPopup?.classList.add("hidden");
+    fontOptions?.classList.add("hidden");
+    appearanceOptions?.classList.add("hidden");
+  });
+
+  themeOptions?.querySelectorAll(".theme-circle").forEach((circle) => {
+    circle.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      setTheme(circle.dataset.theme);
+      themeOptions?.classList.add("hidden");
+    });
+  });
+
+  appearanceToggle?.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    appearanceOptions?.classList.toggle("hidden");
+    signPopup?.classList.add("hidden");
+    themeOptions?.classList.add("hidden");
+    fontOptions?.classList.add("hidden");
+  });
+
+  appearanceChoices.forEach((option) => {
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      setAppearance(option.dataset.appearance);
+      appearanceOptions?.classList.add("hidden");
+    });
+  });
+
+  fontBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    fontOptions?.classList.toggle("hidden");
+    signPopup?.classList.add("hidden");
+    themeOptions?.classList.add("hidden");
+    appearanceOptions?.classList.add("hidden");
+  });
+
+  fontOptions?.querySelectorAll(".font-option").forEach((option) => {
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      setFont(option.dataset.font);
+      fontOptions?.classList.add("hidden");
+    });
+  });
+
+  copyBtn?.addEventListener("click", async (e) => {
+    e.stopPropagation();
+
+    const base = window.location.origin + window.location.pathname;
+
+    const url =
+      `${base}` +
+      `?sign=${encodeURIComponent(state.sign)}` +
+      `&theme=${encodeURIComponent(state.theme)}` +
+      `&font=${encodeURIComponent(state.font)}` +
+      `&appearance=${encodeURIComponent(state.appearance)}` +
+      `&embed=true`;
+
+    await navigator.clipboard.writeText(url);
+
+    copyMessage?.classList.remove("hidden");
+    copyMessage?.classList.add("show");
+
+    clearTimeout(window.__copyTimer);
+    window.__copyTimer = setTimeout(() => {
+      copyMessage?.classList.add("hidden");
+      copyMessage?.classList.remove("show");
+    }, 1500);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (
+      signPopup?.contains(e.target) ||
+      themeOptions?.contains(e.target) ||
+      fontOptions?.contains(e.target) ||
+      appearanceOptions?.contains(e.target) ||
+      signBtn?.contains(e.target) ||
+      themeBtn?.contains(e.target) ||
+      fontBtn?.contains(e.target) ||
+      appearanceToggle?.contains(e.target)
+    ) {
+      return;
+    }
+
+    closeMenus();
+  });
+}
+
+function init() {
+  setTheme(state.theme);
+  setFont(state.font);
+  setAppearance(state.appearance);
+  updateSignText();
+  loadHoroscope(state.sign);
+}
+
+init();
