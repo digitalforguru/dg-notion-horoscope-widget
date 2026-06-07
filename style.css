@@ -217,7 +217,7 @@ body::before {
   gap: 4px;
   align-items: baseline;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -236,7 +236,13 @@ body::before {
 
 #text,
 #previewText {
-  max-width: 375px;
+  font-size: 0.58rem;
+  line-height: 1.45;
+  opacity: 0.82;
+
+  max-width: 360px;
+
+  letter-spacing: 0.01em;
 }
 
 #date,
