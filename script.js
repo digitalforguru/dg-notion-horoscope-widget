@@ -121,22 +121,29 @@ async function loadHoroscope(sign) {
 
   try {
     const res = await fetch(
-      "https://freehoroscopeapi.com/api/v1/get-horoscope/daily?sign=" +
-        encodeURIComponent(sign)
+      `https://digitalguru-horoscope-proxy.vercel.app/api/horoscope?sign=${encodeURIComponent(sign)}`
     );
 
     const data = await res.json();
 
-    const horoscope = data?.data?.horoscope || "stars unavailable ✨";
-    const apiDate = data?.data?.date || new Date().toISOString().slice(0, 10);
+    const horoscope =
+      data.horoscope ||
+      "stars unavailable ✨";
+
+    const today = new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
 
     if (text) text.textContent = horoscope;
     if (previewText) previewText.textContent = horoscope;
 
-    if (date) date.textContent = apiDate.toLowerCase();
-    if (previewDate) previewDate.textContent = apiDate.toLowerCase();
+    if (date) date.textContent = today.toLowerCase();
+    if (previewDate) previewDate.textContent = today.toLowerCase();
+
   } catch (err) {
-    console.error("horoscope fetch failed:", err);
+    console.error(err);
 
     if (text) text.textContent = "stars unavailable ✨";
     if (previewText) previewText.textContent = "stars unavailable ✨";
