@@ -121,13 +121,33 @@ async function loadHoroscope(sign) {
 
   try {
     const res = await fetch(
-      `https://api.api-ninjas.com/v1/horoscope?zodiac=${sign}`,
-      {
-        headers: {
-          "X-Api-Key": "blbTUv2CVt9YgApgn2mioA==nKrg5ySEuPnb5cPE"
-        }
-      }
+      `https://freehoroscopeapi.com/api/v1/get-horoscope/daily?sign=${encodeURIComponent(sign)}`
     );
+
+    const data = await res.json();
+    console.log("free horoscope api:", data);
+
+    const horoscope =
+      data?.data?.horoscope ||
+      "stars unavailable ✨";
+
+    const apiDate =
+      data?.data?.date ||
+      new Date().toISOString().slice(0, 10);
+
+    if (text) text.textContent = horoscope;
+    if (previewText) previewText.textContent = horoscope;
+
+    if (date) date.textContent = apiDate.toLowerCase();
+    if (previewDate) previewDate.textContent = apiDate.toLowerCase();
+
+  } catch (err) {
+    console.error("horoscope fetch failed:", err);
+
+    if (text) text.textContent = "stars unavailable ✨";
+    if (previewText) previewText.textContent = "stars unavailable ✨";
+  }
+}
 
     const data = await res.json();
 
