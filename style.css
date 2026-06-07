@@ -178,8 +178,8 @@ body::before {
 /* HOROSCOPE WIDGET */
 
 .widget {
-  width: 220px;
-  min-height: 220px;
+  width: 300px;
+  min-height: 190px;
   border-radius: 24px;
   padding: 16px;
   position: relative;
@@ -236,9 +236,10 @@ body::before {
 
 #text,
 #previewText {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   line-height: 1.35;
   opacity: 0.9;
+  max-width: 260px;
 }
 
 #date,
@@ -691,4 +692,8 @@ html.embed-mode .embed-widget {
   .widget {
     max-width: 100%;
   }
+}
+html.embed-mode .widget {
+  width: 300px !important;
+  min-height: 190px !important;
 }
