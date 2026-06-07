@@ -700,3 +700,19 @@ html.embed-mode .widget {
   width: 420px !important;
   min-height: 165px !important;
 }
+/* keep zodiac popup above embed/setup cards */
+.customize-card,
+.control-panel {
+  position: relative;
+  overflow: visible !important;
+  z-index: 50;
+}
+
+.setup-card {
+  position: relative;
+  z-index: 1;
+}
+
+#signPopup {
+  z-index: 999999 !important;
+}
